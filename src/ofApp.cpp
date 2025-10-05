@@ -1,18 +1,13 @@
 #include "ofApp.h"
 
 //--------------------------------------------------------------
-void ofApp::setup(){
-	ofDisableArbTex();
+void ofApp::setup() {
 	ofEnableAlphaBlending();
 	ofSetLogLevel(OF_LOG_VERBOSE);
-	
-	
-	
+
 	shaderA.load("shaders/bufferA");
 	shaderDraw.load("shaders/image");
-	
-	
-	
+
 	densityWidth = 1920;
 	densityHeight = 1080;
 	// process all but the density on 16th resolution
@@ -20,17 +15,41 @@ void ofApp::setup(){
 	simulationHeight = densityHeight / 2;
 	windowWidth = ofGetWindowWidth();
 	windowHeight = ofGetWindowHeight();
-	
+
 	fboBufferA.allocate(densityWidth, densityHeight, GL_RGBA32F_ARB);
 	fboImage.allocate(densityWidth, densityHeight, GL_RGBA32F_ARB);
-	
+	gui.setup();
+	positionsGroup.setName("positions");
+
+	for (int i = 0; i < MAX_POS; i++) {
+		positionsGroup.add(positionsParameter[i]
+						   .set(
+								"position" + ofToString(i)
+								// random init position
+								,
+								ofVec3f(0,
+										ofRandom(ofGetHeight()),
+										0)
+								,
+								ofVec3f::zero()
+								,
+								ofVec3f(ofGetWidth(), ofGetHeight(), 1)));
+	}
+
+	gui.add(positionsGroup);
+	gui.loadFromFile("settings.xml");
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
-	frame += 1 ;
-	float dt = 1.0 / max(ofGetFrameRate(), 1.f); // more smooth as 'real' deltaTime.
-	
+void ofApp::update() {
+	// sync positionsParameter to positions
+	for (int i = 0; i < MAX_POS; i++) {
+		positions[i] = positionsParameter[i].get();
+	}
+	frame += 1;
+	float dt = 1.0 / max(ofGetFrameRate(),
+						 1.f); // more smooth as 'real' deltaTime.
+
 	// apply noiseshader to fbo
 	fboBufferA.begin();
 	shaderA.begin();
@@ -39,13 +58,19 @@ void ofApp::update(){
 	shaderA.setUniform1f("texCoordHeightScale", densityHeight);
 	shaderA.setUniform1f("iTime", ofGetElapsedTimef());
 	shaderA.setUniform1f("iTimeDelta", dt);
-	shaderA.setUniform4f("iMouse", ofGetMouseX(), ofGetMouseY(), ofGetMousePressed(), 1.0);
+	shaderA
+		.setUniform4f("iMouse",
+					  ofGetMouseX(),
+					  ofGetMouseY(),
+					  ofGetMousePressed(),
+					  1.0);
+	shaderA.setUniform3fv("positions", &positions[0].x, MAX_POS);
 	shaderA.setUniform1i("iFrame", frame);
-	shaderA.setUniformTexture("iChannel0", fboBufferA.getTexture() , 1);
-	fboImage.draw(0 ,0);
+	shaderA.setUniformTexture("iChannel0", fboBufferA.getTexture(), 1);
+	fboImage.draw(0, 0);
 	shaderA.end();
 	fboBufferA.end();
-	
+
 	fboImage.begin();
 	shaderDraw.begin();
 	shaderDraw.setUniform3f("iResolution", densityWidth, densityHeight, 0);
@@ -53,86 +78,89 @@ void ofApp::update(){
 	shaderDraw.setUniform1f("texCoordHeightScale", densityHeight);
 	shaderDraw.setUniform1f("iTime", ofGetElapsedTimef());
 	shaderDraw.setUniform1i("iFrame", frame);
-	shaderDraw.setUniformTexture("iChannel0", fboBufferA.getTexture() , 1 );
-	
+	shaderDraw.setUniformTexture("iChannel0", fboBufferA.getTexture(), 1);
+
 	fboBufferA.draw(0, 0);
 	shaderDraw.end();
 	fboImage.end();
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
-	
+void ofApp::draw() {
+
 	fboImage.draw(0, 0, ofGetWindowWidth(), ofGetWindowHeight());
-	
+
 	if (showGUI) {
+		// draw position indicators
+		ofPushStyle();
+		ofSetColor(255, 0, 0);
+		for (int i = 0; i < MAX_POS; i++) {
+			ofDrawCircle(
+						 positions[i].x * (densityWidth / ofGetWindowWidth()),
+						 positions[i].y * (densityHeight / ofGetWindowHeight()), 5);
+		}
+		ofPopStyle();
+		ofSetColor(255);
+
 		int width = windowWidth * 0.25;
 		int height = windowHeight * 0.25;
-		fboBufferA.draw(0, 0, width, height);
+		fboBufferA.draw(ofGetWidth() - width, 0, width, height);
+
+		gui.draw();
 	}
 }
 
 //--------------------------------------------------------------
-void ofApp::exit(){
-
+void ofApp::exit() {
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-
+void ofApp::keyPressed(int key) {
 }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-
+void ofApp::keyReleased(int key) {
+	if (key == 'g' || key == 'G') {
+		showGUI = !showGUI;
+	}
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
+void ofApp::mouseMoved(int x, int y) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
+void ofApp::mouseDragged(int x, int y, int button) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-
+void ofApp::mousePressed(int x, int y, int button) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
+void ofApp::mouseReleased(int x, int y, int button) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
-
+void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
+void ofApp::mouseEntered(int x, int y) {
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
+void ofApp::mouseExited(int x, int y) {
 }
 
 //--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
+void ofApp::windowResized(int w, int h) {
 }
 
 //--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
+void ofApp::gotMessage(ofMessage msg) {
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
+void ofApp::dragEvent(ofDragInfo dragInfo) {
 }

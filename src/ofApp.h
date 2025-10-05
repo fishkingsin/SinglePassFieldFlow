@@ -3,18 +3,18 @@
 #include "ofMain.h"
 #include "ofxAutoReloadedShader.h"
 #include "ofxGui.h"
+#define MAX_POS 25
+class ofApp : public ofBaseApp {
 
-class ofApp : public ofBaseApp{
-	
 public:
 	void setup() override;
 	void update() override;
 	void draw() override;
 	void exit() override;
-	
+
 	void keyPressed(int key) override;
 	void keyReleased(int key) override;
-	void mouseMoved(int x, int y ) override;
+	void mouseMoved(int x, int y) override;
 	void mouseDragged(int x, int y, int button) override;
 	void mousePressed(int x, int y, int button) override;
 	void mouseReleased(int x, int y, int button) override;
@@ -24,11 +24,16 @@ public:
 	void windowResized(int w, int h) override;
 	void dragEvent(ofDragInfo dragInfo) override;
 	void gotMessage(ofMessage msg) override;
-	
+
 	int frame, densityWidth, densityHeight, simulationWidth, simulationHeight, windowWidth, windowHeight;
 	ofxAutoReloadedShader shaderA;
 	ofxAutoReloadedShader shaderDraw;
 	ofFbo fboBufferA; // with alpha
 	ofFbo fboImage; // with alpha
 	bool showGUI = false;
+
+	ofxPanel gui;
+	ofParameterGroup positionsGroup;
+	ofParameter<ofVec3f> positionsParameter[MAX_POS];
+	ofVec3f positions[MAX_POS];
 };
